@@ -1,39 +1,56 @@
-##age.py
-##gets newest or oldest files
-##author anonymous
+##movefile.py
+##moves/copies a file
+##greg rosengarten - 11/16/2012
 
-import os, glob, time, operator
+import sys,os, glob, shutil 
+from age import *
 
-def get_oldest_file(files, _invert=False):
-    """ Find and return the oldest file of input file names.
-    Only one wins tie. Values based on time distance from present.
-    Use of `_invert` inverts logic to make this a youngest routine,
-    to be used more clearly via `get_youngest_file`.
-    """
-    gt = operator.lt if _invert else operator.gt
-    # Check for empty list.
-    if not files:
-        return None
-    # Raw epoch distance.
-    now = time.time()
-    # Select first as arbitrary sentinel file, storing name and age.
-    oldest = files[0], now - os.path.getctime(files[0])
-    # Iterate over all remaining files.
-    for f in files[1:]:
-        age = now - os.path.getctime(f)
-        if gt(age, oldest[1]):
-            # Set new oldest.
-            oldest = f, age
-    # Return just the name of oldest file.
-    return oldest[0]
+def movefile(source,mask,dest, _cp=False):
 
-def get_youngest_file(files):
-    return get_oldest_file(files, _invert=True)
-"""
-#usage examples: 
+    mv = shutil.copy2 if _cp else shutil.move
+    ##check for undefined args
+    ##if not source or mask or dest:
+        ##return None
+    
+    ##get file to move
+    gob = os.path.join(source,mask)
+    list_of_files = glob.glob(gob)
+    if not list_of_files:
+        print "No files match the glob %s" %gob
+        sys.exit(1)
+    else:
+        file = get_oldest_file(list_of_files)
+    
+    ## move the file
+    mv(file,dest)
+    
+    ## return the resulting filename and path moved
+    name = os.path.basename(file)
+    resultstr = os.path.join(dest,name)
+    
+    return resultstr    
 
-files = glob.glob('d:\\applications\\sophis\\log\\*.log')
-print 'oldest:', get_oldest_file(files)
-print 'youngest:', get_youngest_file(files)
-time.sleep(5) # five seconds to look at result
-"""
+def main():
+    
+    for arg in sys.argv[1],sys.argv[3]:
+	## check each directory exists
+            if os.path.exists(arg):
+                continue
+            else:
+                print "directory '%s' doesn't exist. Exiting." % arg
+                break
+
+    try:
+        print movefile(sys.argv[1],sys.argv[2],sys.argv[3])
+    except shutil.Error:
+        print "Dest file already exists."
+        sys.exit(1)
+        '''
+    except WindowsError:
+        "File not removed.  Write permissions unavailable on '%s'" % sys.argv[3]
+        sys.exit(1)
+        '''
+## main execution here
+if __name__ == "__main__":
+    main()
+      
